@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Тимур",
+    "services": [1, 2, 5],
+    "day_off": "sunday"
+  },
+  {
+    "id": 2,
+    "name": "Азиз",
+    "services": [3, 1],
+    "day_off": "monday"
+  },
+  {
+    "id": 3,
+    "name": "Бахром",
+    "services": [4, 6, 1],
+    "day_off": "tuesday"
+  }
+]
