@@ -18,7 +18,12 @@ BTN_SEND_CONTACT = "📱 Отправить контакт"
 
 BOOK_CHOOSE_SERVICE = "Выберите услугу:"
 BOOK_CHOOSE_MASTER = "Выберите мастера:"
-BOOK_CHOOSE_DATE = "Выберите дату:"
+BOOK_CHOOSE_DATE = (
+    "📅 Выберите дату — {month} {year}\n\n"
+    "📍 — сегодня   ✖ — нет свободного времени"
+)
+BOOK_DATE_IN_PAST = "Эта дата уже прошла, выберите другую"
+BOOK_DATE_CHOSEN = "📅 Дата: {date}"
 BOOK_CHOOSE_TIME = "Выберите свободное время:"
 BOOK_NO_SLOTS = "На эту дату свободного времени нет. Выберите другой день."
 BOOK_CONFIRM_TEMPLATE = (
@@ -30,6 +35,13 @@ BOOK_CONFIRM_TEMPLATE = (
     "Цена: {price} сум"
 )
 BOOK_SAVED = "🎉 Вы записаны! Ждём вас."
+
+CAL_MONTHS = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+              "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+CAL_WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+CAL_MONTH_ACTIVE = "• {month} •"
+CAL_DAY_TODAY = "📍{day}"
+CAL_DAY_BUSY = "✖"
 
 MY_BOOKINGS_EMPTY = "У вас пока нет записей."
 MY_BOOKINGS_HEADER = "<b>Ваши записи:</b>"
@@ -48,4 +60,3 @@ BROADCAST_SENT = "✅ Рассылка отправлена."
 REVIEW_ASK_RATING = "Оцените нас от 1 до 5 звёзд:"
 REVIEW_ASK_TEXT = "Напишите пару слов о визите:"
 REVIEW_THANKS = "Спасибо за отзыв! 🙏"
-
