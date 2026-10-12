@@ -1,2 +1,5 @@
 .venv
 .env
+__pycache__/
+data/bookings.json
+data/logs.txt
