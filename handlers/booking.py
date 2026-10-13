@@ -45,7 +45,6 @@ def format_date(day):
 
 
 def details(data):
-    """Поля для texts.BOOK_DETAILS из данных FSM."""
     service = find(SERVICES_FILE, data["service_id"])
     master = find(MASTERS_FILE, data["master_id"])
     return {

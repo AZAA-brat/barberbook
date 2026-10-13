@@ -18,7 +18,7 @@ from aiogram.types import (
     InlineKeyboardButton,
 )
 
-from config import ADMIN_ID
+from config import admintoken
 from states import Broadcast
 from texts import (
     ADMIN_MENU_TITLE,
@@ -37,7 +37,7 @@ router = Router()
 
 
 def _is_admin(user_id: int) -> bool:
-    return user_id == int(ADMIN_ID)
+    return user_id == int(admintoken)
 
 
 def _load_bookings():

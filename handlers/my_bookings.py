@@ -10,7 +10,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
 )
 
-from config import ADMIN_ID
+from config import admintoken
 from texts import (
     BTN_MY_BOOKINGS,
     BOOKING_CANCELLED,
@@ -88,7 +88,7 @@ async def cancel_booking(callback: CallbackQuery):
 
     try:
         await callback.bot.send_message(
-            int(ADMIN_ID),
+            int(admintoken),
             f"⚠️ Клиент {callback.from_user.full_name} отменил запись: {_fmt(booking)}",
         )
     except TelegramAPIError:

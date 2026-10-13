@@ -14,7 +14,7 @@ router = Router()
 
 ADMIN_IDS = [
     int(admin_id)
-    for admin_id in os.getenv("ADMIN_IDS", "").split(",")
+    for admin_id in os.getenv("ADMIN_ID", "").split(",")
     if admin_id.strip()
 ]
 

@@ -13,7 +13,6 @@ import handlers.start as start
 from config import tokenbot
 
 bot = Bot(token=tokenbot, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-# Апдейты одного пользователя обрабатываются по очереди: двойной клик по кнопке не отработает дважды.
 dp = Dispatcher(events_isolation=SimpleEventIsolation())
 dp.include_routers(admin.router, booking.router, info.router, my_bookings.router, reviews.router, start.router)
 
