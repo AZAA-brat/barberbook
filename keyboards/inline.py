@@ -1,57 +1,87 @@
-import calendar
-from datetime import date
-
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-MONTHS = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-          "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
-WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+import texts
 
 
-class CalendarCb(CallbackData, prefix="cal"):
-    action: str
-    year: int = 0
-    month: int = 0
-    day: int = 0
+# У всех кнопок записи префикс "book_" — по нему ловим нажатия на устаревшие сообщения.
+class ServiceCb(CallbackData, prefix="book_s"):
+    id: int
 
 
-def shift_month(year, month, n):
-    index = year * 12 + month - 1 + n
-    return index // 12, index % 12 + 1
+class MasterCb(CallbackData, prefix="book_m"):
+    id: int
 
 
-def calendar_kb(year, month, busy_days=(), months_before=0, months_after=2):
-    today = date.today()
-    ignore = CalendarCb(action="ignore").pack()
+class DateCb(CallbackData, prefix="book_d"):
+    day: str  # ISO: "2026-10-13"
+
+
+class TimeCb(CallbackData, prefix="book_t"):
+    # Часы и минуты отдельно: ":" — разделитель внутри callback_data, "10:30" упаковать нельзя.
+    hour: int
+    minute: int
+
+
+class NavCb(CallbackData, prefix="book_n"):
+    action: str  # back | cancel | confirm
+
+
+def nav_buttons(back=True):
+    buttons = [InlineKeyboardButton(text=texts.BTN_CANCEL, callback_data=NavCb(action="cancel").pack())]
+    if back:
+        buttons.insert(0, InlineKeyboardButton(text=texts.BTN_BACK, callback_data=NavCb(action="back").pack()))
+    return buttons
+
+
+def services_kb(services):
     builder = InlineKeyboardBuilder()
+    for service in services:
+        builder.button(text=service["name"], callback_data=ServiceCb(id=service["id"]))
+    builder.adjust(1)
+    builder.row(*nav_buttons(back=False))
+    return builder.as_markup()
 
-    tabs = []
-    for n in range(-months_before, months_after + 1):
-        y, m = shift_month(today.year, today.month, n)
-        if (y, m) == (year, month):
-            tabs.append(InlineKeyboardButton(text=f"• {MONTHS[m - 1]} •", callback_data=ignore))
+
+def masters_kb(masters):
+    builder = InlineKeyboardBuilder()
+    for master in masters:
+        builder.button(text=master["name"], callback_data=MasterCb(id=master["id"]))
+    builder.adjust(2)
+    builder.row(*nav_buttons())
+    return builder.as_markup()
+
+
+def dates_kb(days, today):
+    """days — список (date, есть_свободное_время)."""
+    builder = InlineKeyboardBuilder()
+    for day, has_slots in days:
+        if not has_slots:
+            template = texts.BOOK_DATE_BTN_BUSY
+        elif day == today:
+            template = texts.BOOK_DATE_BTN_TODAY
         else:
-            cb = CalendarCb(action="month", year=y, month=m).pack()
-            tabs.append(InlineKeyboardButton(text=MONTHS[m - 1], callback_data=cb))
-    builder.row(*tabs, width=3)
+            template = texts.BOOK_DATE_BTN
+        text = template.format(weekday=texts.WEEKDAYS_SHORT[day.weekday()], date=day.strftime("%d.%m"))
+        builder.button(text=text, callback_data=DateCb(day=day.isoformat()))
+    builder.adjust(3)
+    builder.row(*nav_buttons())
+    return builder.as_markup()
 
-    builder.row(*[InlineKeyboardButton(text=wd, callback_data=ignore) for wd in WEEKDAYS])
 
-    for week in calendar.monthcalendar(year, month):
-        if date(year, month, max(week)) < today:
-            continue
-        row = []
-        for day in week:
-            if day == 0 or date(year, month, day) < today:
-                row.append(InlineKeyboardButton(text=" ", callback_data=ignore))
-            elif date(year, month, day) in busy_days:
-                row.append(InlineKeyboardButton(text="✖", callback_data=ignore))
-            else:
-                text = f"📍{day}" if date(year, month, day) == today else str(day)
-                cb = CalendarCb(action="day", year=year, month=month, day=day).pack()
-                row.append(InlineKeyboardButton(text=text, callback_data=cb))
-        builder.row(*row)
+def times_kb(slots):
+    builder = InlineKeyboardBuilder()
+    for slot in slots:
+        hour, minute = map(int, slot.split(":"))
+        builder.button(text=slot, callback_data=TimeCb(hour=hour, minute=minute))
+    builder.adjust(4)
+    builder.row(*nav_buttons())
+    return builder.as_markup()
 
+
+def confirm_kb():
+    builder = InlineKeyboardBuilder()
+    builder.button(text=texts.BTN_CONFIRM, callback_data=NavCb(action="confirm"))
+    builder.row(*nav_buttons())
     return builder.as_markup()
