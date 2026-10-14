@@ -1,10 +1,7 @@
 import asyncio
 import html
-from datetime import date, datetime
-from zoneinfo import ZoneInfo
-
-import asyncio
-from datetime import datetime
+from collections import Counter
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from aiogram import Router, F
@@ -32,6 +29,11 @@ from utils.storage import load_json, save_json, add_log
 TZ = ZoneInfo("Asia/Tashkent")
 BOOKINGS_FILE = "data/bookings.json"
 USERS_FILE = "data/users.json"
+SERVICES_FILE = "data/services.json"
+REVIEWS_FILE = "data/reviews.json"
+
+REVIEWS_LIMIT = 5
+REVIEW_TEXT_MAX = 300
 
 router = Router()
 
@@ -48,6 +50,42 @@ def _load_users():
     return load_json(USERS_FILE) or {}
 
 
+def _load_reviews():
+    return load_json(REVIEWS_FILE) or []
+
+
+def _load_services() -> dict:
+    """Возвращает {id: service}. Поддерживает и список, и словарь."""
+    data = load_json(SERVICES_FILE) or {}
+    if isinstance(data, list):
+        return {str(s.get("id")): s for s in data}
+    return {str(k): v for k, v in data.items()}
+
+
+def _booking_price(booking: dict, services: dict) -> int:
+    """Цена записи: своя цена в записи, иначе цена услуги из services.json."""
+    price = booking.get("price")
+    if price is None:
+        key = booking.get("service_id", booking.get("service"))
+        price = services.get(str(key), {}).get("price", 0)
+    try:
+        return int(price)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _fmt_money(amount: int) -> str:
+    return f"{amount:,}".replace(",", " ") + " сум"
+
+
+def _stars(rating) -> str:
+    try:
+        n = max(0, min(5, int(rating)))
+    except (TypeError, ValueError):
+        return "—"
+    return "⭐" * n
+
+
 @router.message(Command("admin"))
 async def admin_panel(message: Message):
     if not _is_admin(message.from_user.id):
@@ -56,6 +94,8 @@ async def admin_panel(message: Message):
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Записи на сегодня", callback_data="admin:today")],
+        [InlineKeyboardButton(text="Статистика за неделю", callback_data="admin:stats")],
+        [InlineKeyboardButton(text="Последние отзывы", callback_data="admin:reviews")],
         [InlineKeyboardButton(text="Рассылка", callback_data="admin:broadcast")],
     ])
     await message.answer(ADMIN_MENU_TITLE, reply_markup=kb)
@@ -87,6 +127,88 @@ async def admin_today(callback: CallbackQuery):
         body = "Записей нет."
 
     await callback.message.answer(f"{ADMIN_TODAY_HEADER}\n{body}")
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin:stats")
+async def admin_stats(callback: CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer(ADMIN_NO_ACCESS, show_alert=True)
+        return
+
+    today = datetime.now(TZ).date()
+    week_start = today - timedelta(days=6)  # 7 дней, включая сегодня
+    start_iso, end_iso = week_start.isoformat(), today.isoformat()
+
+    services = _load_services()
+    week = [
+        b for b in _load_bookings()
+        if b.get("status") == "active"
+        and start_iso <= str(b.get("date", "")) <= end_iso
+    ]
+
+    period = f"{week_start:%d.%m} — {today:%d.%m}"
+
+    if not week:
+        await callback.message.answer(
+            f"📊 Статистика за неделю ({period})\n\nЗаписей за этот период нет."
+        )
+        await callback.answer()
+        return
+
+    revenue = sum(_booking_price(b, services) for b in week)
+
+    masters = Counter(b.get("master") for b in week if b.get("master"))
+    if masters:
+        top_master, top_count = masters.most_common(1)[0]
+        master_line = f"{html.escape(str(top_master))} ({top_count} зап.)"
+    else:
+        master_line = "—"
+
+    await callback.message.answer(
+        f"📊 <b>Статистика за неделю</b> ({period})\n\n"
+        f"Записей: {len(week)}\n"
+        f"Выручка: {_fmt_money(revenue)}\n"
+        f"Самый загруженный мастер: {master_line}",
+        parse_mode="HTML",
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin:reviews")
+async def admin_reviews(callback: CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer(ADMIN_NO_ACCESS, show_alert=True)
+        return
+
+    reviews = sorted(
+        _load_reviews(),
+        key=lambda r: str(r.get("created_at", "")),
+        reverse=True,
+    )[:REVIEWS_LIMIT]
+
+    if not reviews:
+        await callback.message.answer("Отзывов пока нет.")
+        await callback.answer()
+        return
+
+    users = _load_users()
+    blocks = []
+    for r in reviews:
+        name = users.get(str(r.get("user_id")), {}).get("name", "Клиент")
+        text = str(r.get("text", "")).strip()
+        if len(text) > REVIEW_TEXT_MAX:
+            text = text[:REVIEW_TEXT_MAX].rstrip() + "…"
+        date_part = str(r.get("created_at", ""))[:10]
+        header = f"{_stars(r.get('rating'))} <b>{html.escape(str(name))}</b>"
+        if date_part:
+            header += f" · {html.escape(date_part)}"
+        blocks.append(f"{header}\n{html.escape(text) or '—'}")
+
+    await callback.message.answer(
+        "💬 <b>Последние отзывы</b>\n\n" + "\n\n".join(blocks),
+        parse_mode="HTML",
+    )
     await callback.answer()
 
 
@@ -145,18 +267,18 @@ async def broadcast_preview(message: Message, state: FSMContext):
         await message.answer("Пришлите текст сообщением.")
         return
 
-    html = message.html_text
+    text_html = message.html_text
     kb = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="✅ Отправить", callback_data="admin:broadcast_send"),
         InlineKeyboardButton(text="❌ Отмена", callback_data="admin:broadcast_cancel"),
     ]])
     try:
-        await message.answer(f"Предпросмотр:\n\n{html}", parse_mode="HTML", reply_markup=kb)
+        await message.answer(f"Предпросмотр:\n\n{text_html}", parse_mode="HTML", reply_markup=kb)
     except TelegramBadRequest:
         await message.answer("Ошибка в HTML-тегах. Проверьте текст и пришлите заново.")
         return
 
-    await state.update_data(broadcast_text=html)
+    await state.update_data(broadcast_text=text_html)
     await state.set_state(Broadcast.confirm)
 
 
