@@ -21,5 +21,6 @@ requests==2.34.2
 soupsieve==2.10
 typing-inspection==0.4.4
 typing_extensions==4.16.0
+tzdata==2026.4
 urllib3==2.8.0
 yarl==1.25.1
