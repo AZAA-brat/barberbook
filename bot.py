@@ -10,7 +10,7 @@ import handlers.info as info
 import handlers.my_bookings as my_bookings
 import handlers.reviews as reviews
 import handlers.start as start
-from config import tokenbot
+from config import ADMIN_IDS, tokenbot
 
 bot = Bot(token=tokenbot, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(events_isolation=SimpleEventIsolation())
@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 async def main():
     logging.basicConfig(level=logging.INFO)
+    if not ADMIN_IDS:
+        logger.warning("ADMIN_ID в .env пустой или не число: /admin и уведомления админу работать не будут")
     await dp.start_polling(bot)
 if __name__ == "__main__":
     asyncio.run(main())

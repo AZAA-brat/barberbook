@@ -16,6 +16,7 @@ from texts import (
     REG_INVALID_NAME,
     REG_INVALID_PHONE,
     REG_DONE,
+    HELP_TEXT,
 )
 from utils.storage import load_json, save_json, add_log
 
@@ -35,6 +36,12 @@ async def start(message: Message, state: FSMContext):
 
     await state.set_state(Registration.name)
     await message.answer(REG_ASK_NAME)
+
+
+# Выше хендлера имени: во время регистрации /help не должен сохраниться как имя.
+@router.message(Command("help"))
+async def help_command(message: Message):
+    await message.answer(HELP_TEXT)
 
 
 @router.message(Registration.name)

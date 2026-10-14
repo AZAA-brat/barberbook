@@ -1,6 +1,5 @@
 import html
 import json
-import os
 from datetime import datetime
 
 from aiogram import Router, F
@@ -10,15 +9,10 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from config import ADMIN_IDS
 from texts import BTN_REVIEW, REVIEW_ASK_TEXT
 
 router = Router()
-
-ADMIN_IDS = [
-    int(admin_id)
-    for admin_id in os.getenv("ADMIN_ID", "").split(",")
-    if admin_id.strip()
-]
 
 
 class ReviewStates(StatesGroup):

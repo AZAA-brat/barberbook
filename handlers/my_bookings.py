@@ -11,7 +11,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
 )
 
-from config import admintoken
+from config import ADMIN_IDS
 from texts import (
     BTN_MY_BOOKINGS,
     BOOKING_CANCELLED,
@@ -87,10 +87,9 @@ async def cancel_booking(callback: CallbackQuery):
     await callback.answer()
     await callback.message.edit_text(BOOKING_CANCELLED)
 
-    try:
-        await callback.bot.send_message(
-            int(admintoken),
-            f"⚠️ Клиент {html.escape(callback.from_user.full_name)} отменил запись: {_fmt(booking)}",
-        )
-    except TelegramAPIError:
-        add_log(callback.from_user.id, "notify_admin_failed", f"id={booking_id}")
+    text = f"⚠️ Клиент {html.escape(callback.from_user.full_name)} отменил запись: {_fmt(booking)}"
+    for admin_id in ADMIN_IDS:
+        try:
+            await callback.bot.send_message(admin_id, text)
+        except TelegramAPIError:
+            add_log(callback.from_user.id, "notify_admin_failed", f"id={booking_id} admin={admin_id}")
