@@ -36,8 +36,7 @@ def upcoming_days():
 
 
 def free_slots(data, day):
-    service = find(SERVICES_FILE, data["service_id"])
-    return get_free_slots(data["master_id"], day, service["duration"])
+    return get_free_slots(data["master_id"], day.isoformat(), data["service_id"])
 
 
 def format_date(day):
@@ -172,9 +171,14 @@ async def pick_time(callback: CallbackQuery, callback_data: TimeCb, state: FSMCo
 @router.callback_query(Booking.confirm, NavCb.filter(F.action == "confirm"))
 async def confirm_booking(callback: CallbackQuery, state: FSMContext, bot: Bot):
     data = await state.get_data()
+    day = date.fromisoformat(data["date"])
+    # Пока клиент смотрел на экран подтверждения, слот могли занять, а дата или время — пройти.
+    if day not in upcoming_days():
+        await callback.answer(texts.BOOK_DATE_IN_PAST, show_alert=True)
+        return await ask_date(callback.message, state)
     # Проверка слота и запись в файл идут без await между ними, поэтому
     # другой клиент не может занять это время в промежутке.
-    if data["time"] not in free_slots(data, date.fromisoformat(data["date"])):
+    if data["time"] not in free_slots(data, day):
         await callback.answer(texts.BOOK_SLOT_TAKEN, show_alert=True)
         return await ask_time(callback.message, state)
     booking = save_booking(callback.from_user, data)
@@ -209,7 +213,11 @@ async def expired(callback: CallbackQuery):
     """Кнопка из старого сообщения: запись уже завершена/отменена или бот перезапускался."""
     await callback.answer(texts.BOOK_EXPIRED, show_alert=True)
     if isinstance(callback.message, Message):
-        await callback.message.edit_reply_markup(reply_markup=None)
+        try:
+            await callback.message.edit_reply_markup(reply_markup=None)
+        except TelegramBadRequest:
+            # Сообщение уже нельзя изменить — алерта достаточно.
+            pass
 
 
 # --- Сохранение и уведомление ---
