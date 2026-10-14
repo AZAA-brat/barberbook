@@ -1,3 +1,4 @@
+import html
 import json
 import os
 from datetime import datetime
@@ -9,6 +10,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from texts import BTN_REVIEW, REVIEW_ASK_TEXT
 
 router = Router()
 
@@ -25,6 +27,7 @@ class ReviewStates(StatesGroup):
 
 
 @router.message(Command("review"))
+@router.message(F.text == BTN_REVIEW)
 async def start_review(message: Message, state: FSMContext):
     builder = InlineKeyboardBuilder()
 
@@ -70,6 +73,10 @@ async def save_review(
     message: Message,
     state: FSMContext
 ):
+    if not message.text:
+        await message.answer(REVIEW_ASK_TEXT)
+        return
+
     data = await state.get_data()
 
     review = {
@@ -102,10 +109,10 @@ async def save_review(
             await message.bot.send_message(
                 admin_id,
                 f"📝 Новый отзыв!\n\n"
-                f"👤 Имя: {review['name']}\n"
+                f"👤 Имя: {html.escape(review['name'])}\n"
                 f"🆔 ID: {review['user_id']}\n"
                 f"⭐ Оценка: {review['rating']}/5\n"
-                f"💬 Отзыв: {review['text']}"
+                f"💬 Отзыв: {html.escape(review['text'])}"
             )
         except Exception:
             pass

@@ -80,7 +80,7 @@ async def admin_today(callback: CallbackQuery):
         lines = []
         for b in todays:
             client = users.get(str(b.get("user_id")), {})
-            name = client.get("name", "—")
+            name = html.escape(client.get("name", "—"))
             lines.append(f"• {b.get('time', '—')} — {name}")
         body = "\n".join(lines)
     else:

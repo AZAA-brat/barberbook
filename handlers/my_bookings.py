@@ -1,3 +1,4 @@
+import html
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -89,7 +90,7 @@ async def cancel_booking(callback: CallbackQuery):
     try:
         await callback.bot.send_message(
             int(admintoken),
-            f"⚠️ Клиент {callback.from_user.full_name} отменил запись: {_fmt(booking)}",
+            f"⚠️ Клиент {html.escape(callback.from_user.full_name)} отменил запись: {_fmt(booking)}",
         )
     except TelegramAPIError:
         add_log(callback.from_user.id, "notify_admin_failed", f"id={booking_id}")
