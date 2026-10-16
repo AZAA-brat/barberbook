@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 async def main():
     logging.basicConfig(level=logging.INFO)
+    if not ADMIN_IDS:
+        logger.warning("ADMIN_ID в .env пустой или не число: /admin и уведомления админу работать не будут")
     await dp.start_polling(bot)
 if __name__ == "__main__":
     asyncio.run(main())

@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, User
 
 import texts
-from config import BOOKING_DAYS, TIMEZONE, admintoken
+from config import ADMIN_IDS, BOOKING_DAYS, TIMEZONE
 from keyboards.inline import (
     DateCb, MasterCb, NavCb, ServiceCb, TimeCb,
     confirm_kb, dates_kb, masters_kb, services_kb, times_kb,
@@ -248,15 +248,16 @@ def save_booking(user: User, data):
 
 
 async def notify_admin(bot: Bot, booking_id, user: User, booking_details):
-    if not admintoken:
+    if not ADMIN_IDS:
         logger.warning("ADMIN_ID не задан, уведомление о записи #%s не отправлено", booking_id)
         return
     client = f'<a href="tg://user?id={user.id}">{html.escape(user.full_name)}</a>'
     if user.username:
         client += f" (@{user.username})"
     text = texts.ADMIN_NEW_BOOKING.format(id=booking_id, client=client, **booking_details)
-    try:
-        await bot.send_message(int(admintoken), text)
-    except (TelegramAPIError, ValueError):
-        # Запись уже сохранена, клиенту ошибку не показываем.
-        logger.exception("Не удалось уведомить админа о записи #%s", booking_id)
+    for admin_id in ADMIN_IDS:
+        try:
+            await bot.send_message(admin_id, text)
+        except TelegramAPIError:
+            # Запись уже сохранена, клиенту ошибку не показываем.
+            logger.exception("Не удалось уведомить админа %s о записи #%s", admin_id, booking_id)

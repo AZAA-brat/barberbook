@@ -1,0 +1,34 @@
+[
+    {
+        "user_id": 5412545383,
+        "username": "Azaa_Larp",
+        "name": "AZAA",
+        "rating": 4,
+        "text": "нетаньяху виноват",
+        "date": "2026-10-14T18:57:54"
+    },
+    {
+        "user_id": 5412545383,
+        "username": "Azaa_Larp",
+        "name": "AZAA",
+        "rating": 1,
+        "text": "ужасно",
+        "date": "2026-10-14T18:59:45"
+    },
+    {
+        "user_id": 5412545383,
+        "username": "Azaa_Larp",
+        "name": "AZAA",
+        "rating": 1,
+        "text": "жалуется",
+        "date": "2026-10-14T19:00:31"
+    },
+    {
+        "user_id": 8712419820,
+        "username": "wepro_teacher",
+        "name": "Wepro Teacher Account",
+        "rating": 5,
+        "text": "/help",
+        "date": "2026-10-14T19:03:02"
+    }
+]

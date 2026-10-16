@@ -38,6 +38,19 @@ BTN_CONTACTS = "📍 Контакты"
 BTN_REVIEW = "⭐️ Оставить отзыв"
 BTN_SEND_CONTACT = "📱 Отправить контакт"
 
+HELP_TEXT = (
+    "<b>Что умеет бот</b>\n\n"
+    f"{BTN_BOOK} — выбрать услугу, мастера, дату и время\n"
+    f"{BTN_MY_BOOKINGS} — посмотреть или отменить запись\n"
+    f"{BTN_PRICES} — прайс и длительность услуг\n"
+    f"{BTN_CONTACTS} — адрес и часы работы\n"
+    f"{BTN_REVIEW} — оценить визит\n\n"
+    "/start — главное меню\n"
+    "/book — записаться\n"
+    "/review — оставить отзыв\n"
+    "/help — эта справка"
+)
+
 BOOK_CHOOSE_SERVICE = "Выберите услугу:"
 BOOK_CHOOSE_MASTER = "Выберите мастера:"
 BOOK_CHOOSE_DATE = (
